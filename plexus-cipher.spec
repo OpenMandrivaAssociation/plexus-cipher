@@ -1,6 +1,6 @@
 Name:           plexus-cipher
 Version:        1.5
-Release:        4
+Release:        6
 Summary:        Plexus Cipher: encryption/decryption Component
 
 Group:          Development/Java
