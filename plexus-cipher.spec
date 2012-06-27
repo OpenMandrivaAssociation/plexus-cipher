@@ -1,6 +1,6 @@
 Name:           plexus-cipher
 Version:        1.5
-Release:        6
+Release:        7
 Summary:        Plexus Cipher: encryption/decryption Component
 
 Group:          Development/Java
@@ -9,34 +9,33 @@ URL:            http://spice.sonatype.org
 #svn export http://svn.sonatype.org/spice/tags/plexus-cipher-1.5
 #tar zcf plexus-cipher-1.5.tar.gz plexus-cipher-1.5
 Source0:        %{name}-%{version}.tar.gz
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+Patch0:         %{name}-migration-to-component-metadata.patch
 
 BuildArch: noarch
 
-BuildRequires: java-devel >= 0:1.6.0
-BuildRequires: maven2
+BuildRequires: java-devel >= 1.6.0
+BuildRequires: maven
 BuildRequires: maven-plugin-plugin
 BuildRequires: maven-compiler-plugin
 BuildRequires: maven-install-plugin
 BuildRequires: maven-jar-plugin
 BuildRequires: maven-javadoc-plugin
 BuildRequires: maven-resources-plugin
-BuildRequires: maven-surefire-maven-plugin
+BuildRequires: maven-surefire-plugin
 BuildRequires: maven-surefire-provider-junit
 BuildRequires: maven-doxia-sitetools
 BuildRequires: plexus-container-default
 BuildRequires: forge-parent
 BuildRequires: spice-parent
-BuildRequires: plexus-maven-plugin
+BuildRequires: plexus-containers-component-metadata
 BuildRequires: junit
 BuildRequires: maven-shared-reporting-impl
 BuildRequires: plexus-digest
 
-Requires: maven2
-Requires:       jpackage-utils
-Requires:       java
-Requires(post):       jpackage-utils
-Requires(postun):     jpackage-utils
+Requires: plexus-containers
+Requires: jpackage-utils
+Requires: java
 
 
 %description
@@ -52,57 +51,33 @@ API documentation for %{name}.
 
 
 %prep
-%setup -q -n %{name}-%{version}
+%setup -q
+
+%patch0 -p1
 
 %build
-export MAVEN_REPO_LOCAL=$(pwd)/.m2/repository
-mvn-jpp \
-        -e \
-        -Dmaven2.jpp.mode=true \
-        -Dmaven.repo.local=$MAVEN_REPO_LOCAL \
-        install javadoc:javadoc
+mvn-rpmbuild -Dmaven.test.failure.ignore=true \
+             install javadoc:aggregate
 
 %install
-rm -rf %{buildroot}
-
 # jars
-install -d -m 0755 %{buildroot}%{_javadir}/plexus
-install -m 644 target/%{name}-%{version}.jar   %{buildroot}%{_javadir}/plexus
-
-(cd %{buildroot}%{_javadir}/plexus && for jar in *-%{version}*; \
-    do ln -sf ${jar} `echo $jar| sed "s|-%{version}||g"`; done)
-
-%add_to_maven_depmap org.sonatype.plexus %{name} %{version} JPP/plexus %{name}
+install -Dm 644 target/%{name}-%{version}.jar   %{buildroot}%{_javadir}/plexus/%{name}.jar
 
 # poms
-install -d -m 755 %{buildroot}%{_mavenpomdir}
-install -pm 644 pom.xml \
-    %{buildroot}%{_mavenpomdir}/JPP.plexus-%{name}.pom
+install -Dpm 644 pom.xml %{buildroot}%{_mavenpomdir}/JPP.plexus-%{name}.pom
 
 # javadoc
-install -d -m 0755 %{buildroot}%{_javadocdir}/plexus/%{name}-%{version}
-cp -pr target/site/api*/* %{buildroot}%{_javadocdir}/plexus/%{name}-%{version}/
-ln -s %{name}-%{version} %{buildroot}%{_javadocdir}/plexus/%{name}
-rm -rf target/site/api*
+install -d -m 0755 %{buildroot}%{_javadocdir}/plexus/%{name}
+cp -pr target/site/api*/* %{buildroot}%{_javadocdir}/plexus/%{name}/
 
-%post
-%update_maven_depmap
-
-%postun
-%update_maven_depmap
-
-%clean
-rm -rf %{buildroot}
+%add_maven_depmap JPP.plexus-%{name}.pom plexus/%{name}.jar
 
 %files
-%defattr(-,root,root,-)
 %{_javadir}/plexus/*
 %{_mavenpomdir}/*
 %{_mavendepmapfragdir}/*
 %doc NOTICE.txt
 
 %files javadoc
-%defattr(-,root,root,-)
-%{_javadocdir}/plexus/%{name}-%{version}
 %{_javadocdir}/plexus/%{name}
 
