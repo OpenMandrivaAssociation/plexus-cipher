@@ -1,7 +1,7 @@
 %_javapackages_macros
 Name:           plexus-cipher
 Version:        1.7
-Release:        4.0%{?dist}
+Release:        4.1%{?dist}
 Summary:        Plexus Cipher: encryption/decryption Component
 
 License:        ASL 2.0
