@@ -1,4 +1,4 @@
-%_javapackages_macros
+%{?_javapackages_macros:%_javapackages_macros}
 Name:           plexus-cipher
 Version:        1.7
 Release:        4.1%{?dist}
