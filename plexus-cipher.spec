@@ -26,6 +26,16 @@ Sisu.
 
 %prep
 %autosetup -n plexus-cipher-plexus-cipher-%{version}
+# The parent maps javaVersion onto javac --release. This JDK rejects 7.
+python - <<'PY'
+from pathlib import Path
+path = Path("pom.xml")
+text = path.read_text()
+old = "<javaVersion>7</javaVersion>"
+if old not in text:
+    raise SystemExit("javaVersion 7 not found")
+path.write_text(text.replace(old, "<javaVersion>8</javaVersion>", 1))
+PY
 # Sisu loads @Named classes from this index. The indexer plugin is not packaged.
 # The declaration has to start a line: the javadoc contains the word class.
 python - <<'PY'
