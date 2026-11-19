@@ -12,7 +12,11 @@ BuildArch:	noarch
 
 BuildRequires:	python
 BuildRequires:	mvn(javax.inject:javax.inject)
+# jakarta-inject provides the same mvn() coordinate and a different jar name.
+BuildRequires:	javax.inject >= 1-2
 BuildRequires:	mvn(org.eclipse.sisu:org.eclipse.sisu.inject)
+# maven-components satisfies the mvn() coordinate from /usr/share/maven/lib.
+BuildRequires:	eclipse-sisu
 BuildRequires:	java-current-devel
 BuildRequires:	sysjar
 
@@ -32,10 +36,29 @@ find . \( -name '*.jar' -o -name '*.class' -o -name '*.so' -o -name '*.node' -o 
 %build
 export JAVA_HOME=%{_jvmdir}/java-openjdk
 export PATH="$JAVA_HOME/bin:$PATH"
-set -- %{_javadir}/org.eclipse.sisu.inject-*.jar
-SISU=$1
-test -f "$SISU"
-CP="%{_javadir}/atinject.jar:${SISU}"
+INJECT=""
+for cand in %{_javadir}/javax.inject.jar %{_javadir}/atinject.jar; do
+	if [ -f "$cand" ]; then
+		INJECT=$cand
+		break
+	fi
+done
+if [ -z "$INJECT" ]; then
+	echo "javax.inject jar missing" >&2
+	exit 1
+fi
+SISU=""
+for cand in %{_javadir}/org.eclipse.sisu.inject-*.jar; do
+	if [ -f "$cand" ]; then
+		SISU=$cand
+		break
+	fi
+done
+if [ -z "$SISU" ]; then
+	echo "sisu inject jar missing" >&2
+	exit 1
+fi
+CP="${INJECT}:${SISU}"
 
 write_index() {
 	CIPHER_ROOT=$1 python - << 'PY'
